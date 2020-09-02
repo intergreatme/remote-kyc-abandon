@@ -87,7 +87,6 @@
             Conn::$abandon_timeout = $abandon_timeout;
             Conn::$conn_type = $conn;
             if(Conn::$conn_type == 'NONE' || Conn::$conn_type == 'REDIS') {
-                error_log('in REDIS mode', 0);
                 try {
                     Conn::$conn_type = 'REDIS';
                     Conn::$conn = new Redis();
@@ -97,7 +96,6 @@
                     error_log('REDIS: '.$ex->getMessage(), 0);
                 }
             } elseif(Conn::$conn_type == 'NONE' || Conn::$conn_type == 'SQLITE') {
-                error_log('in SQLITE mode', 0);
                 try {
                     Conn::$conn_type = 'SQLITE';
                     $sqlite_path = __DIR__.'/abandon.sqlite';
@@ -244,7 +242,7 @@
             switch(Conn::$conn_type) {
                 case 'REDIS':
                     foreach(Conn::$conn->getKeys('*') as $k) {
-                        echo $k.': '.Conn::$conn->get($k).PHP_EOL;
+                        echo $k.': '.Conn::$conn->get($k).' (expires at '.strftime('%Y-%m-%d %T', Conn::$conn->get($k)).')'.PHP_EOL;
                         $count++;
                     }
                     if($count == 0) {
@@ -254,7 +252,7 @@
                 case 'SQLITE':
                     try {
                         foreach(Conn::$conn->query('SELECT * FROM abandon_tx') as $row) {
-                            echo $row['key'].': '.$row['value'].PHP_EOL;
+                            echo $row['key'].': '.$row['value'].' (expires at '.strftime('%Y-%m-%d %T', $row['value']).')'.PHP_EOL;
                             $count++;
                         }
                         if($count == 0) {
